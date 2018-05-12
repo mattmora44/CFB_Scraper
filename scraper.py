@@ -3,15 +3,31 @@ import requests
 import lxml
 import os, os.path, csv
 
+# this is a script that pulls information on players that were rated
+# in ESPN College Football's prospect list on the user's specified year.
+
+#take input
+year = 0;
+while (year > 2019 or year < 2006):
+    year = int(input("Enter Year to pull top football prospects: "))
+
 # initializing the url to a string
-listingurl = "http://www.espn.com/college-sports/football/recruiting/databaseresults/_/sportid/24/class/2009/sort/school/starsfilter/GT/ratingfilter/GT/statuscommit/Commitments/statusuncommit/Uncommited"
+listingurl = "http://www.espn.com/college-sports/football/recruiting/databaseresults/_/sportid/24/class/" + str(year) +"/sort/school/starsfilter/GT/ratingfilter/GT/statuscommit/Commitments/statusuncommit/Uncommited"
 url2 = "http://www.espn.com/college-sports/football/recruiting/databaseresults/_/page/2/sportid/24/class/2009/sort/school/starsfilter/GT/ratingfilter/GT/statuscommit/Commitments/statusuncommit/Uncommited"
 
+# parse the url
 response = requests.get(listingurl)
 soup = BeautifulSoup(response.text, "lxml")
 # soup contains all the html from the page
-#print(soup.prettify())
-listings = []
+
+listings = [] # final list that holds all the information
+
+# Find number of pages
+numPages = soup.find("div", class_="page-numbers").get_text()
+temp = numPages[5:]
+n = int(temp)
+print("Number of Pages: "+ str(n))
+
 # <tr class="evenrow player-####">
 # highlights the whole row
 for rows in soup.find_all("tr"):
@@ -22,7 +38,6 @@ for rows in soup.find_all("tr"):
         #   <a href= "http:...">
         #      <strong>Firstname Lastname</strong>
         name = rows.find("div", class_="name").a.get_text()
-        #
         hometown = rows.find_all("td")[1].get_text()
         school = hometown[hometown.find(",")+4:]
         city = hometown[:hometown.find(",")+4]
@@ -30,10 +45,11 @@ for rows in soup.find_all("tr"):
         grade = rows.find_all("td")[4].get_text()
         if (grade != "NR" and grade != "POST"):
             listings.append([name, school, city, position, grade])
+print("fetched page 1")
 
-for i in range(2,257):
+for i in range(2,n):
+    # traversing through all the pages
     newURL = listingurl[:72] + '/page/' + str(i) + listingurl[72:]
-    #print(newURL)
     response = requests.get(newURL)
     soup = BeautifulSoup(response.text, "lxml")
     for rows in soup.find_all("tr"):
@@ -44,7 +60,6 @@ for i in range(2,257):
             #   <a href= "http:...">
             #      <strong>Firstname Lastname</strong>
             name = rows.find("div", class_="name").a.get_text()
-            #
             hometown = rows.find_all("td")[1].get_text()
             school = hometown[hometown.find(",")+4:]
             city = hometown[:hometown.find(",")+4]
@@ -54,9 +69,11 @@ for i in range(2,257):
                 listings.append([name, school, city, position, grade])
 
     print("Fetched page " + str(i))
+# done with fetching, outputting to filename
 
-with open("footballers2009.csv", 'w', encoding='utf-8') as toWrite:
+filename = str(year) + "FB_Prospects"
+with open(filename + ".csv", 'w', encoding='utf-8') as toWrite:
     writer = csv.writer(toWrite)
     writer.writerows(listings)
 print(" ")
-print("ESPN College Football listings fetched.")
+print("ESPN College Football listings fetched for the year "+ str(year) + ".")
