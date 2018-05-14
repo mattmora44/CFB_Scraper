@@ -11,6 +11,20 @@ year = 0;
 while (year > 2019 or year < 2006):
     year = int(input("Enter Year to pull top football prospects: "))
 
+# ask if user wants to include non rated players
+
+dontInclude = False
+ans = 'empty'
+while (ans != 'y' and ans != 'n' and ans != 'Y' and ans != 'N' and ans != 'yes' and ans != 'no' and ans != 'YES' and ans != 'NO'):
+    userIn = str(input("Would you like to include players with no ratings? (y/n): "))
+    ans = userIn
+if (ans == 'y' or ans == 'Y' or ans == 'yes' or ans == 'YES'):
+    print("Players with ratings will be included.")
+    dontInclude = False
+else:
+    print("Players with ratings will not be included.")
+    dontInclude = True
+
 # initializing the url to a string
 listingurl = "http://www.espn.com/college-sports/football/recruiting/databaseresults/_/sportid/24/class/" + str(year) +"/sort/school/starsfilter/GT/ratingfilter/GT/statuscommit/Commitments/statusuncommit/Uncommited"
 url2 = "http://www.espn.com/college-sports/football/recruiting/databaseresults/_/page/2/sportid/24/class/2009/sort/school/starsfilter/GT/ratingfilter/GT/statuscommit/Commitments/statusuncommit/Uncommited"
@@ -43,9 +57,12 @@ for rows in soup.find_all("tr"):
         city = hometown[:hometown.find(",")+4]
         position = rows.find_all("td")[2].get_text()
         grade = rows.find_all("td")[4].get_text()
-        if (grade != "NR" and grade != "POST"):
+        if (dontInclude == True):
+            if (grade != "NR" and grade != "POST"):
+                listings.append([name, school, city, position, grade])
+        else:
             listings.append([name, school, city, position, grade])
-print("fetched page 1")
+print("Fetched page 1 of "+ str(n))
 
 for i in range(2,n):
     # traversing through all the pages
@@ -65,10 +82,13 @@ for i in range(2,n):
             city = hometown[:hometown.find(",")+4]
             position = rows.find_all("td")[2].get_text()
             grade = rows.find_all("td")[4].get_text()
-            if (grade != "NR" and grade != "POST"):
+            if (dontInclude == True):
+                if (grade != "NR" and grade != "POST"):
+                    listings.append([name, school, city, position, grade])
+            else:
                 listings.append([name, school, city, position, grade])
 
-    print("Fetched page " + str(i))
+    print("Fetched page " + str(i)+" of "+str(n))
 # done with fetching, outputting to filename
 
 filename = str(year) + "FB_Prospects"
